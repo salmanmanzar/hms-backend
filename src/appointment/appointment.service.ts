@@ -1,0 +1,125 @@
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { NotificationService } from '../notification/notification.service';
+import { CreateAppointmentDto } from './dto/create-appointment.dto';
+
+@Injectable()
+export class AppointmentService {
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
+
+  async create(userId: string, dto: CreateAppointmentDto) {
+  const patient = await this.prisma.patient.findUnique({
+    where: { userId },
+    include: { user: true },
+  });
+  if (!patient) {
+    throw new NotFoundException('Patient profile not found');
+  }
+
+  const doctor = await this.prisma.doctor.findUnique({
+    where: { id: dto.doctorId },
+    include: { user: true },
+  });
+  if (!doctor) {
+    throw new NotFoundException('Doctor not found');
+  }
+
+  const scheduledAt = new Date(dto.scheduledAt);
+
+  // Naya check - past date/time reject karo
+  const now = new Date();
+const pakistanNow = new Date(
+  now.toLocaleString('en-US', { timeZone: 'Asia/Karachi' }),
+);
+
+if (scheduledAt < pakistanNow) {
+  throw new BadRequestException('Cannot book an appointment in the past');
+}
+
+  const existing = await this.prisma.appointment.findFirst({
+    where: {
+      doctorId: dto.doctorId,
+      scheduledAt,
+      status: { not: 'cancelled' },
+    },
+  });
+  if (existing) {
+    throw new BadRequestException('Doctor already has an appointment at this time');
+  }
+
+    const appointment = await this.prisma.appointment.create({
+  data: {
+    patientId: patient.id,
+    doctorId: dto.doctorId,
+    scheduledAt,
+    reason: dto.reason,
+  },
+});
+
+    // Emails bhejo - patient aur doctor dono ko
+    this.notificationService.sendAppointmentConfirmation(
+      patient.user.email,
+      patient.user.name,
+      scheduledAt,
+      doctor.user.name,
+      false,
+    ).catch((err) => console.error('Patient email failed:', err));
+
+    this.notificationService.sendAppointmentConfirmation(
+      doctor.user.email,
+      doctor.user.name,
+      scheduledAt,
+      patient.user.name,
+      true,
+    ).catch((err) => console.error('Doctor email failed:', err));
+
+    return appointment;
+  }
+  async findAll() {
+    return this.prisma.appointment.findMany({
+      include: {
+        patient: { include: { user: { select: { name: true } } } },
+        doctor: { include: { user: { select: { name: true } } } },
+      },
+    });
+  }
+
+  async findOne(id: string, currentUser: { userId: string; role: string }) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id },
+      include: {
+        patient: { include: { user: { select: { name: true } } } },
+        doctor: { include: { user: { select: { name: true } } } },
+      },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+
+    if (currentUser.role === 'patient') {
+      const patient = await this.prisma.patient.findUnique({ where: { userId: currentUser.userId } });
+      if (!patient || appointment.patientId !== patient.id) {
+        throw new ForbiddenException('You can only access your own appointments');
+      }
+    }
+
+    return appointment;
+  }
+
+  async updateStatus(id: string, status: string) {
+    await this.findOne(id, { userId: '', role: 'admin' });
+    return this.prisma.appointment.update({
+      where: { id },
+      data: { status },
+    });
+  }
+
+  async remove(id: string) {
+    await this.findOne(id, { userId: '', role: 'admin' });
+    return this.prisma.appointment.delete({ where: { id } });
+  }
+}

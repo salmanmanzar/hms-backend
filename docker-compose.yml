@@ -1,0 +1,17 @@
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: hms-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: salman
+      POSTGRES_PASSWORD: salman@123
+      POSTGRES_DB: hms_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - hms_pgdata:/var/lib/postgresql/data
+
+volumes:
+  hms_pgdata:
