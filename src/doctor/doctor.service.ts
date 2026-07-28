@@ -17,6 +17,15 @@ export class DoctorService {
       },  
     });
   }
+  async findByUserId(userId: string) {
+  return this.prisma.doctor.findUnique({
+    where: { userId },
+    include: {
+      user: { select: { name: true, email: true } },
+      department: { select: { name: true } },
+    },
+  });
+}
 
   async findAll(search?: string) {
   return this.prisma.doctor.findMany({

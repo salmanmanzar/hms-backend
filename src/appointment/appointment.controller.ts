@@ -16,11 +16,11 @@ export class AppointmentController {
     return this.appointmentService.create(req.user.userId, dto);
   }
 
-  @Get()
-  @Roles('admin', 'receptionist', 'doctor')
-  findAll() {
-    return this.appointmentService.findAll();
-  }
+ @Get()
+@Roles('admin', 'receptionist', 'doctor')
+findAll(@Req() req) {
+  return this.appointmentService.findAll(req.user);
+}
 
   @Get(':id')
   @Roles('admin', 'receptionist', 'doctor', 'patient')

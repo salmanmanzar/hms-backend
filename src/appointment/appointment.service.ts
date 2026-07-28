@@ -78,14 +78,31 @@ if (scheduledAt < pakistanNow) {
 
     return appointment;
   }
-  async findAll() {
+  async findAll(currentUser?: { userId: string; role: string }) {
+  if (currentUser?.role === 'doctor') {
+    const doctor = await this.prisma.doctor.findUnique({
+      where: { userId: currentUser.userId },
+    });
+    if (!doctor) {
+      return [];
+    }
     return this.prisma.appointment.findMany({
+      where: { doctorId: doctor.id },
       include: {
-        patient: { include: { user: { select: { name: true } } } },
+        patient: { include: { user: { select: { name: true, email: true } } } },
         doctor: { include: { user: { select: { name: true } } } },
       },
+      orderBy: { scheduledAt: 'asc' },
     });
   }
+
+  return this.prisma.appointment.findMany({
+    include: {
+      patient: { include: { user: { select: { name: true } } } },
+      doctor: { include: { user: { select: { name: true } } } },
+    },
+  });
+}
 
   async findOne(id: string, currentUser: { userId: string; role: string }) {
     const appointment = await this.prisma.appointment.findUnique({

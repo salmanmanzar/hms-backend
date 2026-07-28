@@ -24,6 +24,7 @@ async function main() {
       email: 'superadmin@hms.com',
       password: hashedPassword,
       role: 'admin',
+      isActive: true,
     },
   });
 
