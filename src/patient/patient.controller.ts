@@ -23,6 +23,12 @@ export class PatientController {
     return this.patientService.findAll();
   }
 
+  @Get('me/profile')
+@Roles('patient')
+getMyProfile(@Req() req) {
+  return this.patientService.findByUserId(req.user.userId);
+}
+
   @Get(':id')
   @Roles('admin', 'receptionist', 'doctor', 'patient')
   findOne(@Param('id') id: string, @Req() req) {

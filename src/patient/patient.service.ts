@@ -24,6 +24,12 @@ export class PatientService {
       include: { user: { select: { name: true, email: true } } },
     });
   }
+  async findByUserId(userId: string) {
+  return this.prisma.patient.findUnique({
+    where: { userId },
+    include: { user: { select: { name: true, email: true } } },
+  });
+}
 
   async findOne(id: string, currentUser: { userId: string; role: string }) {
     const patient = await this.prisma.patient.findUnique({
