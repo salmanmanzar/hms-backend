@@ -11,16 +11,17 @@ export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
   @Post()
-  @Roles('patient', 'receptionist')
-  create(@Req() req, @Body() dto: CreateAppointmentDto) {
-    return this.appointmentService.create(req.user.userId, dto);
-  }
-
+@Roles('patient', 'receptionist')
+create(@Req() req, @Body() dto: CreateAppointmentDto) {
+  return this.appointmentService.create(req.user.userId, req.user.role, dto);
+}
  @Get()
 @Roles('admin', 'receptionist', 'doctor')
 findAll(@Req() req) {
   return this.appointmentService.findAll(req.user);
 }
+
+
 
   @Get(':id')
   @Roles('admin', 'receptionist', 'doctor', 'patient')

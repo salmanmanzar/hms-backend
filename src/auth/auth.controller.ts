@@ -4,6 +4,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { SetupPasswordDto } from './dto/setup-password.dto';
+import { RegisterPatientDto } from './dto/register-patient.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
@@ -32,5 +33,12 @@ export class AuthController {
   @Post('setup-password')
   async setupPassword(@Body() dto: SetupPasswordDto) {
     return this.authService.setupPassword(dto.token, dto.password);
+  }
+
+  @Post('register-patient')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('receptionist', 'admin')
+  async registerPatient(@Body() dto: RegisterPatientDto) {
+    return this.authService.registerPatientByStaff(dto);
   }
 }

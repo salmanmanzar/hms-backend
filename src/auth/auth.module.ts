@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { UserService } from '../user/user.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { NotificationService } from '../notification/notification.service';
+import { PatientService } from '../patient/patient.service';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { NotificationService } from '../notification/notification.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService, JwtStrategy, NotificationService],
+  providers: [AuthService, UserService, JwtStrategy, NotificationService, PatientService],
 })
 export class AuthModule {}

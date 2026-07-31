@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { AddMedicalRecordDto } from './dto/add-medical-record.dto';
 
 @Controller('patient')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -27,6 +28,24 @@ export class PatientController {
 @Roles('patient')
 getMyProfile(@Req() req) {
   return this.patientService.findByUserId(req.user.userId);
+}
+
+
+@Get('search/by-email')
+@Roles('receptionist', 'admin')
+findByEmail(@Query('email') email: string) {
+  return this.patientService.findByEmail(email);
+}
+@Post(':id/medical-record')
+@Roles('doctor', 'admin')
+addMedicalRecord(@Param('id') id: string, @Body() dto: AddMedicalRecordDto) {
+  return this.patientService.addMedicalRecord(id, dto);
+}
+
+@Get(':id/history')
+@Roles('admin', 'receptionist', 'doctor', 'patient')
+getHistory(@Param('id') id: string) {
+  return this.patientService.getHistory(id);
 }
 
   @Get(':id')

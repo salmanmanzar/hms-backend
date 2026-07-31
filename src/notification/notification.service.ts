@@ -67,4 +67,21 @@ async sendStaffInvite(to: string, name: string, role: string, token: string) {
     console.error('Failed to send invite email:', error);
   }
 }
+async sendPatientInvite(to: string, name: string, token: string) {
+  const setupUrl = `${process.env.FRONTEND_URL}/setup-password?token=${token}`;
+
+  const subject = 'Welcome to HMS - Set Up Your Account';
+  const text = `Dear ${name},\n\nYour account has been created at the Hospital Management System by our reception staff.\n\nUsername: ${to}\n\nPlease click the link below to set up your password (valid for 24 hours):\n${setupUrl}\n\nRegards,\nHMS Team`;
+
+  try {
+    await this.transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to,
+      subject,
+      text,
+    });
+  } catch (error) {
+    console.error('Failed to send patient invite email:', error);
+  }
+}
 }

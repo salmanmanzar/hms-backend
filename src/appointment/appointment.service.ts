@@ -10,13 +10,28 @@ export class AppointmentService {
     private notificationService: NotificationService,
   ) {}
 
-  async create(userId: string, dto: CreateAppointmentDto) {
-  const patient = await this.prisma.patient.findUnique({
-    where: { userId },
-    include: { user: true },
-  });
-  if (!patient) {
-    throw new NotFoundException('Patient profile not found');
+  async create(userId: string, role: string, dto: CreateAppointmentDto) {
+  let patient;
+
+  if (role === 'receptionist' || role === 'admin') {
+    if (!dto.patientId) {
+      throw new BadRequestException('Patient ID is required when booking on behalf of a patient');
+    }
+    patient = await this.prisma.patient.findUnique({
+      where: { id: dto.patientId },
+      include: { user: true },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+  } else {
+    patient = await this.prisma.patient.findUnique({
+      where: { userId },
+      include: { user: true },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient profile not found');
+    }
   }
 
   const doctor = await this.prisma.doctor.findUnique({
@@ -29,15 +44,11 @@ export class AppointmentService {
 
   const scheduledAt = new Date(dto.scheduledAt);
 
-  // Naya check - past date/time reject karo
   const now = new Date();
-const pakistanNow = new Date(
-  now.toLocaleString('en-US', { timeZone: 'Asia/Karachi' }),
-);
-
-if (scheduledAt < pakistanNow) {
-  throw new BadRequestException('Cannot book an appointment in the past');
-}
+  const pakistanNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Karachi' }));
+  if (scheduledAt < pakistanNow) {
+    throw new BadRequestException('Cannot book an appointment in the past');
+  }
 
   const existing = await this.prisma.appointment.findFirst({
     where: {
@@ -50,34 +61,33 @@ if (scheduledAt < pakistanNow) {
     throw new BadRequestException('Doctor already has an appointment at this time');
   }
 
-    const appointment = await this.prisma.appointment.create({
-  data: {
-    patientId: patient.id,
-    doctorId: dto.doctorId,
+  const appointment = await this.prisma.appointment.create({
+    data: {
+      patientId: patient.id,
+      doctorId: dto.doctorId,
+      scheduledAt,
+      reason: dto.reason,
+    },
+  });
+
+  this.notificationService.sendAppointmentConfirmation(
+    patient.user.email,
+    patient.user.name,
     scheduledAt,
-    reason: dto.reason,
-  },
-});
+    doctor.user.name,
+    false,
+  ).catch((err) => console.error('Patient email failed:', err));
 
-    // Emails bhejo - patient aur doctor dono ko
-    this.notificationService.sendAppointmentConfirmation(
-      patient.user.email,
-      patient.user.name,
-      scheduledAt,
-      doctor.user.name,
-      false,
-    ).catch((err) => console.error('Patient email failed:', err));
+  this.notificationService.sendAppointmentConfirmation(
+    doctor.user.email,
+    doctor.user.name,
+    scheduledAt,
+    patient.user.name,
+    true,
+  ).catch((err) => console.error('Doctor email failed:', err));
 
-    this.notificationService.sendAppointmentConfirmation(
-      doctor.user.email,
-      doctor.user.name,
-      scheduledAt,
-      patient.user.name,
-      true,
-    ).catch((err) => console.error('Doctor email failed:', err));
-
-    return appointment;
-  }
+  return appointment;
+}
   async findAll(currentUser?: { userId: string; role: string }) {
   if (currentUser?.role === 'doctor') {
     const doctor = await this.prisma.doctor.findUnique({
