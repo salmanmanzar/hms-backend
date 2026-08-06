@@ -57,6 +57,19 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  async forgotPassword(email: string) {
+  const user = await this.userService.findByEmail(email);
+
+  if (user) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await this.userService.setInviteToken(user.id, token, expiry);
+    await this.notificationService.sendPasswordResetEmail(user.email, user.name, token);
+  }
+
+  return { message: 'If an account with this email exists, a reset link has been sent.' };
+}
+
   async createStaff(data: { name: string; email: string; role: string }) {
     const existingUser = await this.userService.findByEmail(data.email);
     if (existingUser) {

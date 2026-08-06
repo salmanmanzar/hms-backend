@@ -12,9 +12,10 @@ import { InvoiceModule } from './invoice/invoice.module';
 import { MedicineModule } from './medicine/medicine.module';
 import { NotificationModule } from './notification/notification.module';
 import { DepartmentModule } from './department/department.module';
+import { SaleModule } from './sale/sale.module';
 
 @Module({
-  imports: [PrismaModule, PatientModule, UserModule, AuthModule, DoctorModule, AppointmentModule, PrescriptionModule, InvoiceModule, MedicineModule, NotificationModule, DepartmentModule],
+  imports: [PrismaModule, PatientModule, UserModule, AuthModule, DoctorModule, AppointmentModule, PrescriptionModule, InvoiceModule, MedicineModule, NotificationModule, DepartmentModule, SaleModule],
   controllers: [AppController],
   providers: [AppService],
 })

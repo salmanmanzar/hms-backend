@@ -10,19 +10,20 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
 model User {
-  id                String   @id @default(uuid())
+  id                String    @id @default(uuid())
   name              String
-  email             String   @unique
+  email             String    @unique
   password          String
   role              String
-  inviteToken       String?  @unique
+  inviteToken       String?   @unique
   inviteTokenExpiry DateTime?
-  isActive          Boolean  @default(false)
-  createdAt         DateTime @default(now())
+  isActive          Boolean   @default(false)
+  createdAt         DateTime  @default(now())
 
-  patient   Patient?
-  doctor    Doctor?
+  patient Patient?
+  doctor  Doctor?
 }
 
 model Patient {
@@ -36,80 +37,109 @@ model Patient {
   createdAt      DateTime        @default(now())
   appointments   Appointment[]
   medicalRecords MedicalRecord[]
+  sales          Sale[]
 }
+
+model Sale {
+  id                String     @id @default(uuid())
+  patientId         String?
+  patient           Patient?   @relation(fields: [patientId], references: [id])
+  doctorId          String?
+  doctor            Doctor?    @relation(fields: [doctorId], references: [id])
+  subtotal          Float
+  discountAmount    Float      @default(0)
+  totalAmount       Float
+  commissionAmount  Float?
+  items             SaleItem[]
+  createdAt         DateTime   @default(now())
+}
+
+model SaleItem {
+  id             String   @id @default(uuid())
+  saleId         String
+  sale           Sale     @relation(fields: [saleId], references: [id])
+  medicineId     String
+  medicine       Medicine @relation(fields: [medicineId], references: [id])
+  quantity       Int
+  priceAtSale    Float
+}
+
 model Department {
-  id       String   @id @default(uuid())
-  name     String   @unique
-  doctors  Doctor[]
+  id      String   @id @default(uuid())
+  name    String   @unique
+  doctors Doctor[]
 }
 
 model Doctor {
-  id              String        @id @default(uuid())
-  userId          String        @unique
-  user            User          @relation(fields: [userId], references: [id])
-  specialization  String
-  qualification   String
-  departmentId    String
-  department      Department    @relation(fields: [departmentId], references: [id])
-  appointments    Appointment[]
-  availability    Json?
-  createdAt       DateTime      @default(now())
+  id             String        @id @default(uuid())
+  userId         String        @unique
+  user           User          @relation(fields: [userId], references: [id])
+  specialization String
+  qualification  String
+  departmentId   String
+  department     Department    @relation(fields: [departmentId], references: [id])
+  appointments   Appointment[]
+  availability   Json?
+  createdAt      DateTime      @default(now())
+  sales          Sale[]
 }
 
 model Appointment {
-  id            String        @id @default(uuid())
-  patientId     String
-  patient       Patient       @relation(fields: [patientId], references: [id])
-  doctorId      String
-  doctor        Doctor        @relation(fields: [doctorId], references: [id])
-  scheduledAt   DateTime
-  reason        String?
-  status        String        @default("pending")
-  prescription  Prescription?
-  invoice       Invoice?
-  createdAt     DateTime      @default(now())
+  id           String        @id @default(uuid())
+  patientId    String
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  doctorId     String
+  doctor       Doctor        @relation(fields: [doctorId], references: [id])
+  scheduledAt  DateTime
+  reason       String?
+  status       String        @default("pending")
+  prescription Prescription?
+  invoice      Invoice?
+  createdAt    DateTime      @default(now())
 }
 
 model Prescription {
-  id             String            @id @default(uuid())
-  appointmentId  String            @unique
-  appointment    Appointment       @relation(fields: [appointmentId], references: [id])
-  notes          String?
-  items          PrescriptionItem[]
-  createdAt      DateTime          @default(now())
+  id            String             @id @default(uuid())
+  appointmentId String             @unique
+  appointment   Appointment        @relation(fields: [appointmentId], references: [id])
+  notes         String?
+  items         PrescriptionItem[]
+  createdAt     DateTime           @default(now())
 }
 
 model Medicine {
-  id         String              @id @default(uuid())
-  name       String              @unique
-  stockQty   Int                 @default(0)
+  id         String     @id @default(uuid())
+  name       String     @unique
+  code       String     @unique
+  stockQty   Int        @default(0)
   price      Float
   items      PrescriptionItem[]
+  sales      SaleItem[]
 }
 
 model PrescriptionItem {
-  id              String        @id @default(uuid())
-  prescriptionId  String
-  prescription    Prescription  @relation(fields: [prescriptionId], references: [id])
-  medicineId      String
-  medicine        Medicine      @relation(fields: [medicineId], references: [id])
-  dosage          String
+  id             String       @id @default(uuid())
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
+  medicineId     String
+  medicine       Medicine     @relation(fields: [medicineId], references: [id])
+  dosage         String
 }
 
 model Invoice {
-  id             String       @id @default(uuid())
-  appointmentId  String       @unique
-  appointment    Appointment  @relation(fields: [appointmentId], references: [id])
-  amount         Float
-  paymentStatus  String       @default("pending")
-  createdAt      DateTime     @default(now())
+  id            String      @id @default(uuid())
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  amount        Float
+  paymentStatus String      @default("pending")
+  createdAt     DateTime    @default(now())
 }
 
 model MedicalRecord {
-  id          String   @id @default(uuid())
-  patientId   String
-  patient     Patient  @relation(fields: [patientId], references: [id])
-  diagnosis   String
-  symptoms    String?
-  recordDate  DateTime @default(now())
+  id         String   @id @default(uuid())
+  patientId  String
+  patient    Patient  @relation(fields: [patientId], references: [id])
+  diagnosis  String
+  symptoms   String?
+  recordDate DateTime @default(now())
 }

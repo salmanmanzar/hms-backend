@@ -25,10 +25,10 @@ export class DoctorController {
   }
 
   @Get()
-  @Roles('admin', 'receptionist', 'patient', 'doctor')
-  findAll(@Query('search') search?: string) {
-    return this.doctorService.findAll(search);
-  }
+@Roles('admin', 'receptionist', 'patient', 'doctor', 'pharmacist')   // ← add kiya
+findAll(@Query('search') search?: string) {
+  return this.doctorService.findAll(search);
+}
 
   @Get(':id')
   @Roles('admin', 'receptionist', 'doctor', 'patient')

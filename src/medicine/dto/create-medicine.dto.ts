@@ -5,6 +5,10 @@ export class CreateMedicineDto {
   @IsNotEmpty()
   name!: string;
 
+  @IsString()
+  @IsNotEmpty()
+  code!: string;
+
   @IsNumber()
   @Min(0)
   stockQty!: number;

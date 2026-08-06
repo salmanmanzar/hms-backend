@@ -32,7 +32,7 @@ getMyProfile(@Req() req) {
 
 
 @Get('search/by-email')
-@Roles('receptionist', 'admin')
+@Roles('receptionist', 'admin', 'pharmacist')
 findByEmail(@Query('email') email: string) {
   return this.patientService.findByEmail(email);
 }
@@ -41,6 +41,13 @@ findByEmail(@Query('email') email: string) {
 addMedicalRecord(@Param('id') id: string, @Body() dto: AddMedicalRecordDto) {
   return this.patientService.addMedicalRecord(id, dto);
 }
+@Get('me/search')
+@Roles('doctor')
+searchMyPatients(@Req() req, @Query('search') search?: string) {
+  return this.patientService.searchMyPatients(req.user.userId, search);
+}
+
+
 
 @Get(':id/history')
 @Roles('admin', 'receptionist', 'doctor', 'patient')

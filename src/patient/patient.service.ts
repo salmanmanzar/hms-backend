@@ -93,6 +93,35 @@ async findByEmail(email: string) {
     });
   }
 
+  async searchMyPatients(doctorUserId: string, search?: string) {
+    
+  const doctor = await this.prisma.doctor.findUnique({
+    where: { userId: doctorUserId },
+  });
+  if (!doctor) {
+    return [];
+  }
+
+  const appointments = await this.prisma.appointment.findMany({
+    where: { doctorId: doctor.id },
+    select: { patientId: true },
+    distinct: ['patientId'],
+  });
+
+  const patientIds = appointments.map((a) => a.patientId);
+
+  return this.prisma.patient.findMany({
+    where: {
+      id: { in: patientIds },
+      ...(search
+        ? { user: { name: { contains: search, mode: 'insensitive' } } }
+        : {}),
+    },
+    include: { user: { select: { name: true, email: true } } },
+    take: 10,
+  });
+}
+
   async addMedicalRecord(patientId: string, data: { diagnosis: string; symptoms?: string }) {
   const patient = await this.prisma.patient.findUnique({ where: { id: patientId } });
   if (!patient) {

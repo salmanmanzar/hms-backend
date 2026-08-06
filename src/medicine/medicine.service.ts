@@ -22,6 +22,13 @@ export class MedicineService {
     }
     return medicine;
   }
+  async findByCode(code: string) {
+  const medicine = await this.prisma.medicine.findUnique({ where: { code } });
+  if (!medicine) {
+    throw new NotFoundException('No medicine found with this barcode');
+  }
+  return medicine;
+}
 
   async update(id: string, dto: UpdateMedicineDto) {
     await this.findOne(id);

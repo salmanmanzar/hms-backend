@@ -8,6 +8,7 @@ import { RegisterPatientDto } from './dto/register-patient.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -29,6 +30,11 @@ export class AuthController {
   async createStaff(@Body() dto: CreateStaffDto) {
     return this.authService.createStaff(dto);
   }
+
+  @Post('forgot-password')
+async forgotPassword(@Body() dto: ForgotPasswordDto) {
+  return this.authService.forgotPassword(dto.email);
+}
 
   @Post('setup-password')
   async setupPassword(@Body() dto: SetupPasswordDto) {
