@@ -25,10 +25,16 @@ export class PatientController {
   }
 
   @Get('me/profile')
-@Roles('patient')
-getMyProfile(@Req() req) {
-  return this.patientService.findByUserId(req.user.userId);
-}
+  @Roles('patient')
+  getMyProfile(@Req() req) {
+    return this.patientService.findByUserId(req.user.userId);
+  }
+
+  @Get('me/history')
+  @Roles('patient')
+  getMyHistory(@Req() req) {
+    return this.patientService.getMyHistoryByUserId(req.user.userId);
+  }
 
 
 @Get('search/by-email')

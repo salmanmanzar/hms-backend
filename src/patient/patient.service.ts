@@ -25,11 +25,21 @@ export class PatientService {
     });
   }
   async findByUserId(userId: string) {
-  return this.prisma.patient.findUnique({
-    where: { userId },
-    include: { user: { select: { name: true, email: true } } },
-  });
-}
+    return this.prisma.patient.findUnique({
+      where: { userId },
+      include: { user: { select: { name: true, email: true } } },
+    });
+  }
+
+  async getMyHistoryByUserId(userId: string) {
+    const patient = await this.prisma.patient.findUnique({
+      where: { userId },
+    });
+    if (!patient) {
+      return { patient: null, appointments: [], medicalRecords: [] };
+    }
+    return this.getHistory(patient.id);
+  }
 
 async findByEmail(email: string) {
   const patient = await this.prisma.patient.findFirst({

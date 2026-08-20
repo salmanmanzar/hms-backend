@@ -71,31 +71,33 @@ model Department {
 }
 
 model Doctor {
-  id             String        @id @default(uuid())
-  userId         String        @unique
-  user           User          @relation(fields: [userId], references: [id])
-  specialization String
-  qualification  String
-  departmentId   String
-  department     Department    @relation(fields: [departmentId], references: [id])
-  appointments   Appointment[]
-  availability   Json?
-  createdAt      DateTime      @default(now())
-  sales          Sale[]
+  id                String        @id @default(uuid())
+  userId            String        @unique
+  user              User          @relation(fields: [userId], references: [id])
+  specialization    String
+  qualification     String
+  departmentId      String
+  department        Department    @relation(fields: [departmentId], references: [id])
+  appointments      Appointment[]
+  availability      Json?
+  consultationFee   Float         @default(2000)
+  sales             Sale[]
+  createdAt         DateTime      @default(now())
 }
 
 model Appointment {
-  id           String        @id @default(uuid())
-  patientId    String
-  patient      Patient       @relation(fields: [patientId], references: [id])
-  doctorId     String
-  doctor       Doctor        @relation(fields: [doctorId], references: [id])
-  scheduledAt  DateTime
-  reason       String?
-  status       String        @default("pending")
-  prescription Prescription?
-  invoice      Invoice?
-  createdAt    DateTime      @default(now())
+  id             String        @id @default(uuid())
+  patientId      String
+  patient        Patient       @relation(fields: [patientId], references: [id])
+  doctorId       String
+  doctor         Doctor        @relation(fields: [doctorId], references: [id])
+  scheduledAt    DateTime
+  reason         String?
+  paymentIntentId String?      @unique
+  status         String        @default("pending")
+  prescription   Prescription?
+  invoice        Invoice?
+  createdAt      DateTime      @default(now())
 }
 
 model Prescription {
