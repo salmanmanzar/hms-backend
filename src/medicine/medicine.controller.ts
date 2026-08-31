@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Req } from '@nestjs/common';
 import { MedicineService } from './medicine.service';
 import { CreateMedicineDto } from './dto/create-medicine.dto';
 import { UpdateMedicineDto } from './dto/update-medicine.dto';
@@ -10,24 +10,27 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @Controller('medicine')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class MedicineController {
-  constructor(private readonly medicineService: MedicineService) {}
+  constructor(private readonly medicineService: MedicineService) { }
 
   @Post()
   @Roles('pharmacist', 'admin')
-  create(@Body() dto: CreateMedicineDto) {
-    return this.medicineService.create(dto);
+  create(@Body() dto: CreateMedicineDto, @Req() req) {
+    return this.medicineService.create(dto, req.user.organizationId);
   }
 
   @Get()
   @Roles('admin', 'pharmacist', 'doctor', 'receptionist')
-  findAll() {
-    return this.medicineService.findAll();
+  findAll(@Req() req) {
+    const organizationId = req.user.role === 'super_admin' ? null : req.user.organizationId;
+    return this.medicineService.findAll(organizationId);
   }
+
   @Get('by-code/:code')
-@Roles('admin', 'pharmacist')
-findByCode(@Param('code') code: string) {
-  return this.medicineService.findByCode(code);
-}
+  @Roles('admin', 'pharmacist')
+  findByCode(@Param('code') code: string, @Req() req) {
+    const organizationId = req.user.role === 'super_admin' ? null : req.user.organizationId;
+    return this.medicineService.findByCode(code, organizationId);
+  }
 
   @Get(':id')
   @Roles('admin', 'pharmacist', 'doctor', 'receptionist')

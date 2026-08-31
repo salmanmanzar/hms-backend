@@ -5,7 +5,7 @@ import { UpdatePatientDto } from './dto/update-patient.dto';
 
 @Injectable()
 export class PatientService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(userId: string, dto: CreatePatientDto) {
     return this.prisma.patient.create({
@@ -19,8 +19,9 @@ export class PatientService {
     });
   }
 
-  async findAll() {
+  async findAll(organizationId?: string | null) {
     return this.prisma.patient.findMany({
+      where: organizationId ? { user: { organizationId } } : {},
       include: { user: { select: { name: true, email: true } } },
     });
   }
@@ -41,16 +42,16 @@ export class PatientService {
     return this.getHistory(patient.id);
   }
 
-async findByEmail(email: string) {
-  const patient = await this.prisma.patient.findFirst({
-    where: { user: { email } },
-    include: { user: { select: { name: true, email: true } } },
-  });
-  if (!patient) {
-    throw new NotFoundException('No patient found with this email');
+  async findByEmail(email: string) {
+    const patient = await this.prisma.patient.findFirst({
+      where: { user: { email } },
+      include: { user: { select: { name: true, email: true } } },
+    });
+    if (!patient) {
+      throw new NotFoundException('No patient found with this email');
+    }
+    return patient;
   }
-  return patient;
-}
 
   async findOne(id: string, currentUser: { userId: string; role: string }) {
     const patient = await this.prisma.patient.findUnique({
@@ -69,31 +70,31 @@ async findByEmail(email: string) {
     return patient;
   }
   async getHistory(patientId: string) {
-  const patient = await this.prisma.patient.findUnique({
-    where: { id: patientId },
-    include: { user: { select: { name: true, email: true } } },
-  });
-  if (!patient) {
-    throw new NotFoundException('Patient not found');
+    const patient = await this.prisma.patient.findUnique({
+      where: { id: patientId },
+      include: { user: { select: { name: true, email: true } } },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    const appointments = await this.prisma.appointment.findMany({
+      where: { patientId },
+      include: {
+        doctor: { include: { user: { select: { name: true } } } },
+        prescription: { include: { items: { include: { medicine: true } } } },
+        invoice: true,
+      },
+      orderBy: { scheduledAt: 'desc' },
+    });
+
+    const medicalRecords = await this.prisma.medicalRecord.findMany({
+      where: { patientId },
+      orderBy: { recordDate: 'desc' },
+    });
+
+    return { patient, appointments, medicalRecords };
   }
-
-  const appointments = await this.prisma.appointment.findMany({
-    where: { patientId },
-    include: {
-      doctor: { include: { user: { select: { name: true } } } },
-      prescription: { include: { items: { include: { medicine: true } } } },
-      invoice: true,
-    },
-    orderBy: { scheduledAt: 'desc' },
-  });
-
-  const medicalRecords = await this.prisma.medicalRecord.findMany({
-    where: { patientId },
-    orderBy: { recordDate: 'desc' },
-  });
-
-  return { patient, appointments, medicalRecords };
-}
 
   async update(id: string, dto: UpdatePatientDto) {
     await this.findOne(id, { userId: '', role: 'admin' });
@@ -104,48 +105,48 @@ async findByEmail(email: string) {
   }
 
   async searchMyPatients(doctorUserId: string, search?: string) {
-    
-  const doctor = await this.prisma.doctor.findUnique({
-    where: { userId: doctorUserId },
-  });
-  if (!doctor) {
-    return [];
+
+    const doctor = await this.prisma.doctor.findUnique({
+      where: { userId: doctorUserId },
+    });
+    if (!doctor) {
+      return [];
+    }
+
+    const appointments = await this.prisma.appointment.findMany({
+      where: { doctorId: doctor.id },
+      select: { patientId: true },
+      distinct: ['patientId'],
+    });
+
+    const patientIds = appointments.map((a) => a.patientId);
+
+    return this.prisma.patient.findMany({
+      where: {
+        id: { in: patientIds },
+        ...(search
+          ? { user: { name: { contains: search, mode: 'insensitive' } } }
+          : {}),
+      },
+      include: { user: { select: { name: true, email: true } } },
+      take: 10,
+    });
   }
-
-  const appointments = await this.prisma.appointment.findMany({
-    where: { doctorId: doctor.id },
-    select: { patientId: true },
-    distinct: ['patientId'],
-  });
-
-  const patientIds = appointments.map((a) => a.patientId);
-
-  return this.prisma.patient.findMany({
-    where: {
-      id: { in: patientIds },
-      ...(search
-        ? { user: { name: { contains: search, mode: 'insensitive' } } }
-        : {}),
-    },
-    include: { user: { select: { name: true, email: true } } },
-    take: 10,
-  });
-}
 
   async addMedicalRecord(patientId: string, data: { diagnosis: string; symptoms?: string }) {
-  const patient = await this.prisma.patient.findUnique({ where: { id: patientId } });
-  if (!patient) {
-    throw new NotFoundException('Patient not found');
-  }
+    const patient = await this.prisma.patient.findUnique({ where: { id: patientId } });
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
 
-  return this.prisma.medicalRecord.create({
-    data: {
-      patientId,
-      diagnosis: data.diagnosis,
-      symptoms: data.symptoms,
-    },
-  });
-}
+    return this.prisma.medicalRecord.create({
+      data: {
+        patientId,
+        diagnosis: data.diagnosis,
+        symptoms: data.symptoms,
+      },
+    });
+  }
 
   async remove(id: string) {
     await this.findOne(id, { userId: '', role: 'admin' });

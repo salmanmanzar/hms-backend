@@ -121,7 +121,7 @@ export class AppointmentService {
     }
   }
 
-  async findAll(currentUser?: { userId: string; role: string }) {
+  async findAll(currentUser?: { userId: string; role: string; organizationId?: string | null }) {
     if (currentUser?.role === 'doctor') {
       const doctor = await this.prisma.doctor.findUnique({
         where: { userId: currentUser.userId },
@@ -139,7 +139,10 @@ export class AppointmentService {
       });
     }
 
+    const organizationId = currentUser?.role === 'super_admin' ? null : currentUser?.organizationId;
+
     return this.prisma.appointment.findMany({
+      where: organizationId ? { doctor: { user: { organizationId } } } : {},
       include: {
         patient: { include: { user: { select: { name: true } } } },
         doctor: { include: { user: { select: { name: true } } } },

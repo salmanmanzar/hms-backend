@@ -6,6 +6,7 @@ import { UserService } from '../user/user.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { NotificationService } from '../notification/notification.service';
 import { PatientService } from '../patient/patient.service';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PatientService } from '../patient/patient.service';
       secret: process.env.JWT_SECRET || 'temporary-secret-change-later',
       signOptions: { expiresIn: '15m' },
     }),
+    AuditLogModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, UserService, JwtStrategy, NotificationService, PatientService],

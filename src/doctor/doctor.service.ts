@@ -28,16 +28,19 @@ export class DoctorService {
     });
   }
 
-  async findAll(search?: string) {
+  async findAll(search?: string, organizationId?: string | null) {
     return this.prisma.doctor.findMany({
-      where: search
-        ? {
-          OR: [
-            { specialization: { contains: search, mode: 'insensitive' } },
-            { user: { name: { contains: search, mode: 'insensitive' } } },
-          ],
-        }
-        : {},
+      where: {
+        ...(organizationId ? { user: { organizationId } } : {}),
+        ...(search
+          ? {
+            OR: [
+              { specialization: { contains: search, mode: 'insensitive' } },
+              { user: { name: { contains: search, mode: 'insensitive' } } },
+            ],
+          }
+          : {}),
+      },
       include: {
         user: { select: { name: true, email: true } },
         department: { select: { name: true } },

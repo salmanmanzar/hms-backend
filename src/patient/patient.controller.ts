@@ -10,7 +10,7 @@ import { AddMedicalRecordDto } from './dto/add-medical-record.dto';
 @Controller('patient')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PatientController {
-  constructor(private readonly patientService: PatientService) {}
+  constructor(private readonly patientService: PatientService) { }
 
   @Post()
   @Roles('patient', 'receptionist', 'admin')
@@ -20,8 +20,9 @@ export class PatientController {
 
   @Get()
   @Roles('admin', 'receptionist', 'doctor')
-  findAll() {
-    return this.patientService.findAll();
+  findAll(@Req() req) {
+    const organizationId = req.user.role === 'super_admin' ? null : req.user.organizationId;
+    return this.patientService.findAll(organizationId);
   }
 
   @Get('me/profile')
@@ -37,29 +38,29 @@ export class PatientController {
   }
 
 
-@Get('search/by-email')
-@Roles('receptionist', 'admin', 'pharmacist')
-findByEmail(@Query('email') email: string) {
-  return this.patientService.findByEmail(email);
-}
-@Post(':id/medical-record')
-@Roles('doctor', 'admin')
-addMedicalRecord(@Param('id') id: string, @Body() dto: AddMedicalRecordDto) {
-  return this.patientService.addMedicalRecord(id, dto);
-}
-@Get('me/search')
-@Roles('doctor')
-searchMyPatients(@Req() req, @Query('search') search?: string) {
-  return this.patientService.searchMyPatients(req.user.userId, search);
-}
+  @Get('search/by-email')
+  @Roles('receptionist', 'admin', 'pharmacist')
+  findByEmail(@Query('email') email: string) {
+    return this.patientService.findByEmail(email);
+  }
+  @Post(':id/medical-record')
+  @Roles('doctor', 'admin')
+  addMedicalRecord(@Param('id') id: string, @Body() dto: AddMedicalRecordDto) {
+    return this.patientService.addMedicalRecord(id, dto);
+  }
+  @Get('me/search')
+  @Roles('doctor')
+  searchMyPatients(@Req() req, @Query('search') search?: string) {
+    return this.patientService.searchMyPatients(req.user.userId, search);
+  }
 
 
 
-@Get(':id/history')
-@Roles('admin', 'receptionist', 'doctor', 'patient')
-getHistory(@Param('id') id: string) {
-  return this.patientService.getHistory(id);
-}
+  @Get(':id/history')
+  @Roles('admin', 'receptionist', 'doctor', 'patient')
+  getHistory(@Param('id') id: string) {
+    return this.patientService.getHistory(id);
+  }
 
   @Get(':id')
   @Roles('admin', 'receptionist', 'doctor', 'patient')

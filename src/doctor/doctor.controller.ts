@@ -10,7 +10,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @Controller('doctor')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class DoctorController {
-  constructor(private readonly doctorService: DoctorService) {}
+  constructor(private readonly doctorService: DoctorService) { }
 
   @Post()
   @Roles('doctor', 'admin')
@@ -25,11 +25,11 @@ export class DoctorController {
   }
 
   @Get()
-@Roles('admin', 'receptionist', 'patient', 'doctor', 'pharmacist')   // ← add kiya
-findAll(@Query('search') search?: string) {
-  return this.doctorService.findAll(search);
-}
-
+  @Roles('admin', 'receptionist', 'patient', 'doctor', 'pharmacist')
+  findAll(@Query('search') search?: string, @Req() req?: any) {
+    const organizationId = req.user.role === 'super_admin' ? null : req.user.organizationId;
+    return this.doctorService.findAll(search, organizationId);
+  }
   @Get(':id')
   @Roles('admin', 'receptionist', 'doctor', 'patient')
   findOne(@Param('id') id: string) {

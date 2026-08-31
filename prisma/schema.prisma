@@ -12,18 +12,20 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(uuid())
+  id                String   @id @default(uuid())
   name              String
-  email             String    @unique
+  email             String   @unique
   password          String
   role              String
-  inviteToken       String?   @unique
+  organizationId    String?
+  organization      Organization? @relation(fields: [organizationId], references: [id])
+  inviteToken       String?  @unique
   inviteTokenExpiry DateTime?
-  isActive          Boolean   @default(false)
-  createdAt         DateTime  @default(now())
+  isActive          Boolean  @default(false)
+  createdAt         DateTime @default(now())
 
-  patient Patient?
-  doctor  Doctor?
+  patient   Patient?
+  doctor    Doctor?
 }
 
 model Patient {
@@ -38,6 +40,18 @@ model Patient {
   appointments   Appointment[]
   medicalRecords MedicalRecord[]
   sales          Sale[]
+}
+
+model Organization {
+  id          String        @id @default(uuid())
+  name        String
+  address     String?
+  status      String        @default("pending")
+  createdAt   DateTime      @default(now())
+  users       User[]
+  departments Department[]
+  medicines   Medicine[]
+  auditLogs   AuditLog[]
 }
 
 model Sale {
@@ -65,11 +79,12 @@ model SaleItem {
 }
 
 model Department {
-  id      String   @id @default(uuid())
-  name    String   @unique
-  doctors Doctor[]
+  id             String     @id @default(uuid())
+  name           String
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  doctors        Doctor[]
 }
-
 model Doctor {
   id                String        @id @default(uuid())
   userId            String        @unique
@@ -110,13 +125,15 @@ model Prescription {
 }
 
 model Medicine {
-  id         String     @id @default(uuid())
-  name       String     @unique
-  code       String     @unique
-  stockQty   Int        @default(0)
-  price      Float
-  items      PrescriptionItem[]
-  sales      SaleItem[]
+  id             String              @id @default(uuid())
+  name           String
+  code           String              
+  stockQty       Int                 @default(0)
+  price          Float
+  organizationId String?
+  organization   Organization?       @relation(fields: [organizationId], references: [id])
+  items          PrescriptionItem[]
+  sales          SaleItem[]
 }
 
 model PrescriptionItem {
@@ -144,4 +161,21 @@ model MedicalRecord {
   diagnosis  String
   symptoms   String?
   recordDate DateTime @default(now())
+}
+
+// ─── Immutable Audit Log ───
+// No update or delete operations are provided — append-only by design.
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  actorId        String?
+  actorName      String?
+  actorRole      String?
+  targetId       String?
+  targetName     String?
+  targetRole     String?
+  action         String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
 }

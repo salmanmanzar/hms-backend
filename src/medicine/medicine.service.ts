@@ -5,16 +5,17 @@ import { UpdateMedicineDto } from './dto/update-medicine.dto';
 
 @Injectable()
 export class MedicineService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async create(dto: CreateMedicineDto) {
-    return this.prisma.medicine.create({ data: dto });
+  async create(dto: CreateMedicineDto, organizationId: string) {
+    return this.prisma.medicine.create({ data: { ...dto, organizationId } });
   }
 
-  async findAll() {
-    return this.prisma.medicine.findMany();
+  async findAll(organizationId?: string | null) {
+    return this.prisma.medicine.findMany({
+      where: organizationId ? { organizationId } : {},
+    });
   }
-
   async findOne(id: string) {
     const medicine = await this.prisma.medicine.findUnique({ where: { id } });
     if (!medicine) {
@@ -22,13 +23,15 @@ export class MedicineService {
     }
     return medicine;
   }
-  async findByCode(code: string) {
-  const medicine = await this.prisma.medicine.findUnique({ where: { code } });
-  if (!medicine) {
-    throw new NotFoundException('No medicine found with this barcode');
+  async findByCode(code: string, organizationId?: string | null) {
+    const medicine = await this.prisma.medicine.findFirst({
+      where: { code, ...(organizationId ? { organizationId } : {}) },
+    });
+    if (!medicine) {
+      throw new NotFoundException('No medicine found with this barcode');
+    }
+    return medicine;
   }
-  return medicine;
-}
 
   async update(id: string, dto: UpdateMedicineDto) {
     await this.findOne(id);
