@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { DepartmentService } from './department.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -27,5 +27,19 @@ export class DepartmentController {
   @Roles('admin', 'doctor', 'receptionist', 'patient')
   findOne(@Param('id') id: string) {
     return this.departmentService.findOne(id);
+  }
+
+  @Patch(':id')
+  @Roles('admin')
+  update(@Param('id') id: string, @Body() dto: CreateDepartmentDto, @Req() req) {
+    const organizationId = req.user.role === 'super_admin' ? null : req.user.organizationId;
+    return this.departmentService.update(id, dto, organizationId);
+  }
+
+  @Delete(':id')
+  @Roles('admin')
+  remove(@Param('id') id: string, @Req() req) {
+    const organizationId = req.user.role === 'super_admin' ? null : req.user.organizationId;
+    return this.departmentService.remove(id, organizationId);
   }
 }

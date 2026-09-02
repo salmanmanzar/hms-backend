@@ -86,8 +86,24 @@ export class DoctorService {
 
     const dayName = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
-    const availability = doctor.availability as Record<string, string[]> | null;
-    if (!availability || !availability[dayName]) {
+    let availability = doctor.availability as Record<string, string[]> | null;
+
+    // Default availability fallback (Mon-Thu 9-5, Fri half-day 9-1, Sat 9-1, Sun off)
+    const defaultAvailability: Record<string, string[]> = {
+      monday: ['09:00-17:00'],
+      tuesday: ['09:00-17:00'],
+      wednesday: ['09:00-17:00'],
+      thursday: ['09:00-17:00'],
+      friday: ['09:00-13:00'],
+      saturday: ['09:00-13:00'],
+      sunday: [],
+    };
+
+    if (!availability || Object.keys(availability).length === 0) {
+      availability = defaultAvailability;
+    }
+
+    if (!availability[dayName] || availability[dayName].length === 0) {
       return { date, availableSlots: [] };
     }
 
