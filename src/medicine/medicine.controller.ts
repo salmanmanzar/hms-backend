@@ -4,11 +4,14 @@ import { CreateMedicineDto } from './dto/create-medicine.dto';
 import { UpdateMedicineDto } from './dto/update-medicine.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { SubscriptionGuard } from '../auth/guards/subscription.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePlan } from '../auth/decorators/require-plan.decorator';
 
 
 @Controller('medicine')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, SubscriptionGuard)
+@RequirePlan('professional')
 export class MedicineController {
   constructor(private readonly medicineService: MedicineService) { }
 

@@ -8,6 +8,8 @@ import { NotificationService } from '../notification/notification.service';
 import { PatientService } from '../patient/patient.service';
 import { AuditLogModule } from '../audit-log/audit-log.module';
 
+import { SubscriptionGuard } from './guards/subscription.guard';
+
 @Module({
   imports: [
     JwtModule.register({
@@ -17,6 +19,7 @@ import { AuditLogModule } from '../audit-log/audit-log.module';
     AuditLogModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService, JwtStrategy, NotificationService, PatientService],
+  providers: [AuthService, UserService, JwtStrategy, NotificationService, PatientService, SubscriptionGuard],
+  exports: [SubscriptionGuard],
 })
 export class AuthModule {}

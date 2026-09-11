@@ -43,15 +43,19 @@ model Patient {
 }
 
 model Organization {
-  id          String        @id @default(uuid())
-  name        String
-  address     String?
-  status      String        @default("pending")
-  createdAt   DateTime      @default(now())
-  users       User[]
-  departments Department[]
-  medicines   Medicine[]
-  auditLogs   AuditLog[]
+  id                    String        @id @default(uuid())
+  name                  String
+  address               String?
+  status                String        @default("pending")
+  subscriptionPlan      String        @default("basic")
+  subscriptionStatus    String        @default("pending")
+  subscriptionStartDate DateTime?
+  subscriptionEndDate   DateTime?
+  createdAt             DateTime      @default(now())
+  users                 User[]
+  departments           Department[]
+  medicines             Medicine[]
+  auditLogs             AuditLog[]
 }
 
 model Sale {

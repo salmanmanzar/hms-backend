@@ -171,17 +171,26 @@ export class AuthService {
     password: string;
     organizationName: string;
     address?: string;
+    subscriptionPlan?: string;
   }) {
     const existingUser = await this.userService.findByEmail(data.adminEmail);
     if (existingUser) {
       throw new ConflictException('Email already registered');
     }
 
+    const plan = data.subscriptionPlan && ['basic', 'professional', 'enterprise'].includes(data.subscriptionPlan)
+      ? data.subscriptionPlan
+      : 'basic';
+
     const organization = await this.prisma.organization.create({
       data: {
         name: data.organizationName,
         address: data.address,
         status: 'pending',
+        subscriptionPlan: plan,
+        subscriptionStatus: 'active',
+        subscriptionStartDate: new Date(),
+        subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
 
@@ -197,6 +206,41 @@ export class AuthService {
         isActive: false,
       },
     });
+
+    // Notify Super Admins
+    try {
+      const superAdmins = await this.prisma.user.findMany({
+        where: { role: 'super_admin' },
+        select: { email: true },
+      });
+
+      const superAdminEmails = superAdmins.map((u) => u.email).filter(Boolean);
+      if (process.env.SUPER_ADMIN_EMAIL && !superAdminEmails.includes(process.env.SUPER_ADMIN_EMAIL)) {
+        superAdminEmails.push(process.env.SUPER_ADMIN_EMAIL);
+      }
+      if (superAdminEmails.length === 0 && process.env.EMAIL_USER) {
+        superAdminEmails.push(process.env.EMAIL_USER);
+      }
+
+      for (const email of superAdminEmails) {
+        await this.notificationService.sendNewHospitalAlertToSuperAdmin(email, {
+          hospitalName: data.organizationName,
+          adminName: data.adminName,
+          adminEmail: data.adminEmail,
+          address: data.address,
+          subscriptionPlan: plan,
+        });
+      }
+
+      // Notify Hospital Admin that registration was received
+      await this.notificationService.sendHospitalRegistrationReceived(
+        data.adminEmail,
+        data.adminName,
+        data.organizationName,
+      );
+    } catch (err) {
+      console.error('Error sending hospital registration notification emails:', err);
+    }
 
     return {
       message: 'Your hospital registration has been submitted for approval. You will be notified once approved.',
@@ -265,6 +309,10 @@ export class AuthService {
         name: true,
         address: true,
         status: true,
+        subscriptionPlan: true,
+        subscriptionStatus: true,
+        subscriptionStartDate: true,
+        subscriptionEndDate: true,
       },
     });
   }

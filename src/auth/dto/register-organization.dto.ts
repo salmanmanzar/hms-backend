@@ -19,4 +19,8 @@ export class RegisterOrganizationDto {
     @IsOptional()
     @IsString()
     address?: string;
+
+    @IsOptional()
+    @IsString()
+    subscriptionPlan?: string;
 }
