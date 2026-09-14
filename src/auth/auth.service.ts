@@ -49,8 +49,15 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (user.organization && user.organization.status !== 'approved') {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
     if (!user.isActive) {
-      throw new UnauthorizedException('Please set up your password using the invite link sent to your email');
+      if (user.inviteToken) {
+        throw new UnauthorizedException('Please set up your password using the invite link sent to your email');
+      }
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const passwordMatches = await bcrypt.compare(data.password, user.password);
